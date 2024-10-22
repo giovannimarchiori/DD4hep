@@ -572,11 +572,13 @@ void Geant4Output2EDM4hep::saveCollection(OutputContext<G4Event>& /*ctxt*/, G4VH
         const Geant4HitData::Contribution& c = *ci;
         int trackID = pm->particleID(c.trackID);
         auto mcp = m_particles.at(trackID);
-        sCaloHitCont.setEnergy( c.deposit/CLHEP::GeV );
-        sCaloHitCont.setTime( c.time/CLHEP::ns );
         sCaloHitCont.setParticle( mcp );
+        sCaloHitCont.setEnergy( 0.0 );
+        sCaloHitCont.setTime( 0.0 );
 
         if ( hit_creation_mode == Geant4Sensitive::DETAILED_MODE )     {
+	  sCaloHitCont.setEnergy( c.deposit/CLHEP::GeV );
+	  sCaloHitCont.setTime( c.time/CLHEP::ns );
           edm4hep::Vector3f p(c.x/CLHEP::mm, c.y/CLHEP::mm, c.z/CLHEP::mm);
           sCaloHitCont.setPDG( c.pdgID );
           sCaloHitCont.setStepPosition( p );

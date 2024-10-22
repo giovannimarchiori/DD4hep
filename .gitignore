@@ -35,10 +35,13 @@ lib/
 /include
 /python/
 build/
+build*
+install/
 
 # CMake config files
 *Config.cmake
 *ConfigVersion.cmake
+*-targets.cmake
 Version.h
 
 # emacs backup files
@@ -54,3 +57,4 @@ Version.h
 
 # CMake commands database
 compile_commands.json
+
