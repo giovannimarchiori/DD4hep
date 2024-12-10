@@ -71,7 +71,6 @@ void Geant4AssemblyVolume::imprint(const Geant4Converter& cnv,
                                    Geant4AssemblyVolume*  pParentAssembly,
                                    G4LogicalVolume*       pMotherLV,
                                    G4Transform3D&         transformation,
-                                   G4int                  copyNumBase,
                                    G4bool                 surfCheck)
 {
   struct _Wrap : public G4AssemblyVolume  {
@@ -82,10 +81,7 @@ void Geant4AssemblyVolume::imprint(const Geant4Converter& cnv,
   TGeoVolume*       vol = parent->GetVolume();
   G4AssemblyVolume* par_ass = pParentAssembly->m_assembly;
   Geant4GeometryInfo&  info = cnv.data();
-  unsigned int numberOfDaughters = (copyNumBase == 0) ? pMotherLV->GetNoDaughters() : copyNumBase;
 
-  // We start from the first available index
-  numberOfDaughters++;
   _Wrap::imprintsCountPlus(par_ass);
 
   path = detail::tools::placementPath(chain);
@@ -141,7 +137,7 @@ void Geant4AssemblyVolume::imprint(const Geant4Converter& cnv,
                                                   triplet.GetVolume(),
                                                   pMotherLV,
                                                   false,
-                                                  numberOfDaughters + i,
+                                                  node->GetNumber(),
                                                   surfCheck );
 
       info.g4VolumeImprints[vol].emplace_back(new_chain,pvPlaced.first);
@@ -159,7 +155,7 @@ void Geant4AssemblyVolume::imprint(const Geant4Converter& cnv,
     }
     else if ( triplet.GetAssembly() )  {
       // Place volumes in this assembly with composed transformation
-      imprint(cnv, parent, std::move(new_chain), avol, pMotherLV, Tfinal, i*100+copyNumBase, surfCheck );
+      imprint(cnv, parent, std::move(new_chain), avol, pMotherLV, Tfinal, surfCheck );
     }
     else   {
       G4Exception("Geant4AssemblyVolume::imprint(..)", "GeomVol0003", FatalException,
