@@ -160,7 +160,8 @@ class DD4hepSimulation(object):
                         "\nshell: enable interactive session")
 
     parser.add_argument("--inputFiles", "-I", nargs='+', action="store", default=self.inputFiles,
-                        help="InputFiles for simulation %s files are supported" % ", ".join(POSSIBLEINPUTFILES))
+                        help="InputFiles for simulation %s files are supported"
+                        "\nEDM4hep files are also supported under the .root extension" % ", ".join(POSSIBLEINPUTFILES))
 
     parser.add_argument("--outputFile", "-O", action="store", default=self.outputFile,
                         help="Outputfile from the simulation: .slcio, edm4hep.root and .root"
@@ -180,7 +181,7 @@ class DD4hepSimulation(object):
                         help="Skip first N events when reading a file")
 
     parser.add_argument("--physicsList", action="store", dest="physicsList", default=self.physicsList,
-                        help="Physics list to use in simulation")
+                        help="Physics list to use in simulation. Deprecated, use physics.list")
 
     parser.add_argument("--crossingAngleBoost", action="store", dest="crossingAngleBoost",
                         default=self.crossingAngleBoost,

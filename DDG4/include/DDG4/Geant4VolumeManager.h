@@ -21,6 +21,9 @@
 // Geant4 include files
 #include <G4VTouchable.hh>
 
+#include <utility>
+#include <vector>
+
 // Geant4 forward declarations
 class G4VPhysicalVolume;
 
@@ -75,7 +78,7 @@ namespace dd4hep {
       placementPath(const G4VTouchable* touchable, bool exception = true) const;
       /// Access CELLID by Geant4 touchable object
       VolumeID volumeID(const G4VTouchable* touchable) const;
-      /// Accessfully decoded volume fields  by placement path
+      /// Access fully decoded volume fields  by placement path
       void volumeDescriptor(const std::vector<const G4VPhysicalVolume*>& path,
                             std::pair<VolumeID,std::vector<std::pair<const BitFieldElement*, VolumeID> > >& volume_desc) const;
       /// Access fully decoded volume fields by Geant4 touchable object

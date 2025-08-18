@@ -67,6 +67,8 @@ namespace dd4hep {
     class Geant4Output2EDM4hep : public Geant4OutputAction  {
     protected:
       using writer_t = podio::ROOTWriter;
+      using floatmap_t = std::map< std::string, float >;
+      using intmap_t = std::map< std::string, int >;
       using stringmap_t = std::map< std::string, std::string >;
       using trackermap_t = std::map< std::string, edm4hep::SimTrackerHitCollection >;
       using calorimeterpair_t = std::pair< edm4hep::SimCalorimeterHitCollection, edm4hep::CaloHitContributionCollection >;
@@ -78,9 +80,12 @@ namespace dd4hep {
       trackermap_t                  m_trackerHits;
       calorimetermap_t              m_calorimeterHits;
       stringmap_t                   m_runHeader;
-      stringmap_t                   m_eventParametersInt;
-      stringmap_t                   m_eventParametersFloat;
+      intmap_t                      m_eventParametersInt;
+      floatmap_t                    m_eventParametersFloat;
       stringmap_t                   m_eventParametersString;
+      intmap_t                      m_runParametersInt;
+      floatmap_t                    m_runParametersFloat;
+      stringmap_t                   m_runParametersString;
       stringmap_t                   m_cellIDEncodingStrings{};
       std::string                   m_section_name      { "events" };
       int                           m_runNo             { 0 };
@@ -117,9 +122,13 @@ namespace dd4hep {
     protected:
       /// Fill event parameters in EDM4hep event
       template <typename T>
-      void saveEventParameters(const std::map<std::string, std::string >& parameters)   {
-        for(const auto& p : parameters)   {
-          info("Saving event parameter: %-32s = %s", p.first.c_str(), p.second.c_str());
+      void saveEventParameters(const std::map<std::string, T >& parameters)   {
+        for(const auto& p : parameters) {
+          std::stringstream output;
+          output << "Saving event parameter: "
+                 << std::setw(32) << p.first
+                 << std::setw(20) << p.second;
+          info(output.str().c_str());
           m_frame.putParameter(p.first, p.second);
         }
       }
@@ -245,6 +254,9 @@ Geant4Output2EDM4hep::Geant4Output2EDM4hep(Geant4Context* ctxt, const std::strin
   declareProperty("EventParametersInt",    m_eventParametersInt);
   declareProperty("EventParametersFloat",  m_eventParametersFloat);
   declareProperty("EventParametersString", m_eventParametersString);
+  declareProperty("RunParametersInt",      m_runParametersInt);
+  declareProperty("RunParametersFloat",    m_runParametersFloat);
+  declareProperty("RunParametersString",   m_runParametersString);
   declareProperty("RunNumberOffset",       m_runNumberOffset);
   declareProperty("EventNumberOffset",     m_eventNumberOffset);
   declareProperty("SectionName",           m_section_name);
@@ -336,6 +348,15 @@ void Geant4Output2EDM4hep::saveRun(const G4Run* run)   {
   // store everything as parameters for now
   podio::Frame runHeader {};
   for (const auto& [key, value] : m_runHeader)
+    runHeader.putParameter(key, value);
+
+  for (const auto& [key, value] : m_runParametersInt)
+    runHeader.putParameter(key, value);
+
+  for (const auto& [key, value] : m_runParametersFloat)
+    runHeader.putParameter(key, value);
+
+  for (const auto& [key, value] : m_runParametersString)
     runHeader.putParameter(key, value);
 
   m_runNo = m_runNumberOffset > 0 ? m_runNumberOffset + run->GetRunID() : run->GetRunID();
@@ -438,7 +459,11 @@ void Geant4Output2EDM4hep::saveParticles(Geant4ParticleMap* particles)    {
       if( mcp.isCreatedInSimulation() )
         mcp.setGeneratorStatus( 0 )  ;
 
+#if EDM4HEP_MCPARTICLE_HAS_HELICITY
+      mcp.setHelicity(p->spin[2]);
+#else
       mcp.setSpin(p->spin);
+#endif
 
       p_ids[id] = cnt++;
       p_part.push_back(p);
@@ -573,7 +598,7 @@ void Geant4Output2EDM4hep::saveCollection(OutputContext<G4Event>& /*ctxt*/, G4VH
     // Create the hit container even if there are no entries!
     auto& hits = m_trackerHits[colName];
     for(unsigned i=0 ; i < nhits ; ++i){
-      auto sth = hits->create();
+      auto sth = hits.create();
       const Geant4Tracker::Hit* hit = coll->hit(i);
       const Geant4Tracker::Hit::Contribution& t = hit->truth;
       int   trackID   = pm->particleID(t.trackID);
@@ -608,7 +633,7 @@ void Geant4Output2EDM4hep::saveCollection(OutputContext<G4Event>& /*ctxt*/, G4VH
     // Create the hit container even if there are no entries!
     auto& hits = m_calorimeterHits[colName];
     for(unsigned i=0 ; i < nhits ; ++i){
-      auto sch = hits.first->create();
+      auto sch = hits.first.create();
       const Geant4Calorimeter::Hit* hit = coll->hit(i);
       const auto& pos = hit->position;
       sch.setCellID( hit->cellID );
@@ -619,7 +644,7 @@ void Geant4Output2EDM4hep::saveCollection(OutputContext<G4Event>& /*ctxt*/, G4VH
       // now add the individual step contributions
       for(auto ci=hit->truth.begin(); ci != hit->truth.end(); ++ci){
 
-        auto sCaloHitCont = hits.second->create();
+        auto sCaloHitCont = hits.second.create();
         sch.addToContributions( sCaloHitCont );
 
         const Geant4HitData::Contribution& c = *ci;
@@ -635,6 +660,9 @@ void Geant4Output2EDM4hep::saveCollection(OutputContext<G4Event>& /*ctxt*/, G4VH
           edm4hep::Vector3f p(c.x/CLHEP::mm, c.y/CLHEP::mm, c.z/CLHEP::mm);
           sCaloHitCont.setPDG( c.pdgID );
           sCaloHitCont.setStepPosition( p );
+#if EDM4HEP_BUILD_VERSION >= EDM4HEP_VERSION(0, 99, 3)
+          sCaloHitCont.setStepLength(c.length / CLHEP::mm);
+#endif
         }
       }
     }

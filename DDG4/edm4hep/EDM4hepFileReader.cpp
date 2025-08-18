@@ -248,8 +248,17 @@ namespace dd4hep::sim {
       const auto mom   = mcp.getMomentum();
       const auto vsx   = mcp.getVertex();
       const auto vex   = mcp.getEndpoint();
-      const auto spin  = mcp.getSpin();
       const int  pdg   = mcp.getPDG();
+#ifdef EDM4HEP_MCPARTICLE_HAS_HELICITY
+      p->spin[0] = 0;
+      p->spin[1] = 0;
+      p->spin[2] = mcp.getHelicity();
+#else
+      const auto spin  = mcp.getSpin();
+      p->spin[0]      = spin[0];
+      p->spin[1]      = spin[1];
+      p->spin[2]      = spin[2];
+#endif
       p->pdgID        = pdg;
       p->charge       = int(mcp.getCharge()*3.0);
       p->psx          = mom[0]*CLHEP::GeV;
@@ -264,9 +273,6 @@ namespace dd4hep::sim {
       p->vey          = vex[1]*CLHEP::mm;
       p->vez          = vex[2]*CLHEP::mm;
       p->process      = 0;
-      p->spin[0]      = spin[0];
-      p->spin[1]      = spin[1];
-      p->spin[2]      = spin[2];
       p->colorFlow[0] = 0;
       p->colorFlow[1] = 0;
       p->mass         = mcp.getMass()*CLHEP::GeV;
