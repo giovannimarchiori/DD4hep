@@ -36,7 +36,6 @@ dd4hep_add_plugin(ClientTests
        ROOT::Core ROOT::Geom ROOT::GenVector
        ${OPT_XERCESC} ${CT_BOOST_LIB}
   )
-install(TARGETS ClientTests LIBRARY DESTINATION lib)
 #
 #-----------------------------------------------------------------------------------
 add_executable( multipleGeo   main/MultipleGeometries.cpp )
@@ -666,7 +665,7 @@ if (DD4HEP_USE_GEANT4)
                  --steeringFile ${ClientTestsEx_INSTALL}/scripts/BoxOfStraws_DDSim.py
                  --compactFile ${ClientTestsEx_INSTALL}/compact/BoxOfStraws.xml
                  --enableGun
-                 --numberOfEvents 1
+                 --numberOfEvents 5
                  --outputFile regex.slcio
       REGEX_PASS "BoxOfStrawsDet Handled 1 nodes with 1 sensitive volume type"
       REGEX_FAIL "Error;ERROR; Exception"

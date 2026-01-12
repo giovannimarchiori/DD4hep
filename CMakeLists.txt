@@ -7,8 +7,8 @@ SET_PROPERTY(DIRECTORY . PROPERTY PACKAGE_NAME DD4hep)
 #################
 
 SET( DD4hep_VERSION_MAJOR 1 )
-SET( DD4hep_VERSION_MINOR 32 )
-SET( DD4hep_VERSION_PATCH 1 )
+SET( DD4hep_VERSION_MINOR 34 )
+SET( DD4hep_VERSION_PATCH 0 )
 
 #######################
 # Basic project setup #
@@ -22,6 +22,12 @@ IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
        FORCE )
  MESSAGE(STATUS "CMAKE_INSTALL_PREFIX is ${CMAKE_INSTALL_PREFIX} - overwrite with -D CMAKE_INSTALL_PREFIX" )
 ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+# When enabling DDG4 on Alma 9 and related, CMAKE_INSTALL_LIBDIR is set to lib64
+# Here, we force it to be lib if unset
+if(NOT CMAKE_INSTALL_LIBDIR)
+  set(CMAKE_INSTALL_LIBDIR lib CACHE STRING "Installation directory for libraries" FORCE)
+endif()
 
 ###############################################
 # Setup the environment for the documentation #
@@ -141,7 +147,10 @@ if(TARGET ROOT::ROOTEve)
   find_package (ROOT REQUIRED COMPONENTS ROOTEve CONFIG)
 endif()
 
-# Configure BOOST
+# Set when the minimum required CMake version is at least 3.30
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
 find_package(Boost 1.49 REQUIRED)
 DD4HEP_SETUP_BOOST_TARGETS()
 
@@ -311,7 +320,7 @@ display_std_variables()
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/cmake/DD4hepConfig.cmake.in
   ${PROJECT_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake @ONLY
   )
-INSTALL(FILES ${PROJECT_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake DESTINATION ./cmake )
+INSTALL(FILES ${PROJECT_BINARY_DIR}/${CMAKE_PROJECT_NAME}Config.cmake DESTINATION cmake)
 
 dd4hep_generate_package_configuration_files( ${CMAKE_PROJECT_NAME}Config.cmake )
 
