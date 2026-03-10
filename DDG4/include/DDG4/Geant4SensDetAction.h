@@ -83,6 +83,8 @@ namespace dd4hep {
       virtual std::string fullPath() const = 0;
       /// Access to the sensitive type of the detector
       virtual const std::string& sensitiveType() const = 0;
+      /// Access the DDG4 action sequence
+      virtual Geant4SensDetActionSequence* sequence() const = 0;
     };
 
     /// Base class to construct filters for Geant4 sensitive detectors
@@ -137,6 +139,8 @@ namespace dd4hep {
       int  m_hitCreationMode                  {       0 };
       /// Property: Use the volume manager to access CellID and VolumeID
       bool m_useVolumeManager                 {    true };
+      /// Property: Debug/Print Cell IDs in functions cellID(), volumeID()
+      bool m_debugVolumeID                    {   false };
 
 #if defined(G__ROOT) || defined(__CLING__) || defined(__ROOTCLING__)
       /// Reference to the detector description object
@@ -325,7 +329,7 @@ namespace dd4hep {
      *  \version 1.0
      *  \ingroup DD4HEP_SIMULATION
      */
-    class Geant4SensDetActionSequence: public Geant4Action {
+    class Geant4SensDetActionSequence : public Geant4Action {
     public:
       typedef Geant4HitCollection* (*create_t)(const std::string&, const std::string&, Geant4Sensitive*);
       typedef std::pair<std::string, std::pair<Geant4Sensitive*,create_t> > HitCollection;

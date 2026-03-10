@@ -40,10 +40,51 @@
 #define MM_2_CM 0.1
 #endif
 
+namespace dd4hep  {
+  namespace sim  {
+    /// Print volume ID
+    void _print_volumeid(const std::string& tag, const IDDescriptor& id, DDSegmentation::VolumeID volID)  {
+      if( id.isValid() )  {
+        std::string value = id.str(volID);
+        printout(ALWAYS, tag, "Volume ID: %016llX -> %s", volID, value.c_str());
+        return;
+      }
+      printout(ALWAYS, tag, "Volume ID: %016llX [no ID descriptor]", volID);
+    }
+
+    /// Print volume ID
+    void _print_volumeid(const Geant4Sensitive* action, const char* tag, DDSegmentation::VolumeID volID, double ene=-1e0)  {
+      SensitiveDetector sensitive = action->sensitiveDetector();
+      char text[64];
+      text[0] = 0;
+      if( ene > 0e0 )  {
+        ::snprintf(text, sizeof(text), "Deposit: %12.3e GeV", ene/1e9);
+      }
+      if( sensitive.isValid() )  {
+        Readout readout = sensitive.readout();
+        if( readout.isValid() )  {
+          IDDescriptor id = readout.idSpec();
+          if( id.isValid() )  {
+            std::string value = id.str(volID);
+            action->always("%-16s %016llX -> %s %s", tag, volID, value.c_str(), text);
+            return;
+          }
+          action->always("%-16s %016llX -> Readout: %s [no ID descriptor] %s", tag, volID, readout.name(), text);
+          return;
+        }
+        action->always("%-16s %016llX -> Sensitive: %s [no readout] %s", volID, sensitive.name(), text);
+        return;
+      }
+      action->always("%-16s %016llX [internal error: no sensitive detectector] %s", volID, text);
+    }
+  }
+}
+
 using namespace dd4hep::sim;
 
-#if 0
 namespace {
+
+#if 0
   Geant4ActionSD* _getSensitiveDetector(const std::string& name) {
     G4SDManager* mgr = G4SDManager::GetSDMpointer();
     G4VSensitiveDetector* sd = mgr->FindSensitiveDetector(name);
@@ -61,8 +102,8 @@ namespace {
     }
     return action_sd;
   }
-}
 #endif
+}
 
 /// Standard action constructor
 Geant4ActionSD::Geant4ActionSD(const std::string& nam)
@@ -107,6 +148,7 @@ Geant4Sensitive::Geant4Sensitive(Geant4Context* ctxt, const std::string& nam, De
   }
   declareProperty("UseVolumeManager", m_useVolumeManager = true);
   declareProperty("HitCreationMode",  m_hitCreationMode = SIMPLE_MODE);
+  declareProperty("DebugVolumeID",    m_debugVolumeID = false);
   m_sequence     = context()->kernel().sensitiveAction(m_detector.name());
   m_sensitive    = m_detDesc.sensitiveDetector(det.name());
   m_readout      = m_sensitive.readout();
@@ -257,6 +299,9 @@ long long int Geant4Sensitive::volumeID(const G4Step* step) {
     Geant4StepHandler   stepH(step);
     Geant4VolumeManager volMgr = Geant4Mapping::instance().volumeManager();
     volID = volMgr.volumeID(stepH.preTouchable());
+    if( this->m_debugVolumeID )  {
+      _print_volumeid(this, "Volume ID", volID, step->GetTotalEnergyDeposit());
+    }
   }
   return volID;
 }
@@ -267,6 +312,9 @@ long long int Geant4Sensitive::volumeID(const G4VTouchable* touchable) {
   if( this->useVolumeManager() )  {
     Geant4VolumeManager volMgr = Geant4Mapping::instance().volumeManager();
     volID= volMgr.volumeID(touchable);
+    if( this->m_debugVolumeID )  {
+      _print_volumeid(this, "Volume ID", volID);
+    }
   }
   return volID;
 }
@@ -291,6 +339,9 @@ long long int Geant4Sensitive::cellID(const G4Step* step)  {
       Position glob(global.x()*MM_2_CM, global.y()*MM_2_CM, global.z()*MM_2_CM);
       try  {
         VolumeID cID = m_segmentation.cellID(loc, glob, volID);
+        if( this->m_debugVolumeID )  {
+          _print_volumeid(this, "Cell ID", cID, step->GetTotalEnergyDeposit());
+        }
         return cID;
       }
       catch(const std::exception& e)   {
@@ -305,6 +356,9 @@ long long int Geant4Sensitive::cellID(const G4Step* step)  {
           error("....... Post-step: %s  SD: %s", h.volName(h.post), h.sdName(h.post).c_str());
         std::rethrow_exception(std::move(eptr));
       }
+    }
+    else if( this->m_debugVolumeID )  {
+      _print_volumeid(this, "Volume ID", volID, step->GetTotalEnergyDeposit());
     }
   }
   return volID;
@@ -324,6 +378,9 @@ long long int Geant4Sensitive::cellID(const G4VTouchable* touchable, const G4Thr
       Position glob(global.x()*MM_2_CM, global.y()*MM_2_CM, global.z()*MM_2_CM);
       try  {
         VolumeID cID = m_segmentation.cellID(loc, glob, volID);
+        if( this->m_debugVolumeID )  {
+          _print_volumeid(this, "Cell ID", cID);
+        }
         return cID;
       }
       catch(const std::exception& e)   {
@@ -340,6 +397,9 @@ long long int Geant4Sensitive::cellID(const G4VTouchable* touchable, const G4Thr
         std::rethrow_exception(std::move(eptr));
       }
     }
+    else if( this->m_debugVolumeID )  {
+      _print_volumeid(this, "Volume ID", volID);
+    }
   }
   return volID;
 }
@@ -353,6 +413,7 @@ Geant4SensDetActionSequence::Geant4SensDetActionSequence(Geant4Context* ctxt, co
   /// Update the sensitive detector type, so that the proper instance is created
   m_sensitive = context()->detectorDescription().sensitiveDetector(nam);
   m_sensitiveType = m_sensitive.type();
+  declareProperty("SensitiveType", m_sensitiveType);
   InstanceCount::increment(this);
 }
 

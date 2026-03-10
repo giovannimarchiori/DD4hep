@@ -746,8 +746,8 @@ void* Geant4Converter::handleVolume(const std::string& name, const TGeoVolume* v
   Geant4GeometryMaps::VolumeMap::const_iterator volIt = info.g4Volumes.find(volume);
   if ( _v.testFlagBit(Volume::VETO_SIMU) )  {
     printout(lvl, "Geant4Converter",
-	     "++ Volume %s not converted [Veto'ed for simulation]",
-	     volume->GetName());
+             "++ Volume %s not converted [Veto'ed for simulation]",
+             volume->GetName());
     return nullptr;
   }
   else if (volIt == info.g4Volumes.end() ) {
@@ -803,8 +803,8 @@ void* Geant4Converter::handleVolume(const std::string& name, const TGeoVolume* v
     unsigned char smart_less_value = _v.smartlessValue();
     if( smart_less_value != Volume::NO_SMARTLESS_OPTIMIZATION )  {
       printout(ALWAYS, "Geant4Converter",
-	       "++ Volume %s Set Smartless value to %d",
-	       vnam, int(smart_less_value));
+               "++ Volume %s Set Smartless value to %d",
+               vnam, int(smart_less_value));
       g4vol->SetSmartless( smart_less_value );
     }
     /// Assign limits if necessary
@@ -813,8 +813,8 @@ void* Geant4Converter::handleVolume(const std::string& name, const TGeoVolume* v
     }
     if( g4region )   {
       printout(plevel, "Geant4Converter",
-	       "++ Volume     + Apply REGION settings: %-24s to volume %s.",
-	       reg.name(), vnam);
+               "++ Volume     + Apply REGION settings: %-24s to volume %s.",
+               reg.name(), vnam);
       // Handle the region settings for the world volume seperately.
       // Geant4 does NOT WANT any regions assigned to the workd volume.
       // The world's region is created in the G4RunManagerKernel!
@@ -947,8 +947,8 @@ void* Geant4Converter::handleAssembly(const std::string& name, const TGeoNode* n
 
 /// Dump volume placement in GDML format to output stream
 void* Geant4Converter::handlePlacement(const std::string& name, const TGeoNode* node) const {
-  Geant4GeometryInfo& info = data();
-  PrintLevel lvl = debugPlacements ? ALWAYS : outputLevel;
+  Geant4GeometryInfo& info = this->data();
+  PrintLevel lvl = this->debugPlacements ? ALWAYS : this->outputLevel;
   Geant4GeometryMaps::PlacementMap::const_iterator g4it = info.g4Placements.find(node);
   G4VPhysicalVolume* g4 = (g4it == info.g4Placements.end()) ? 0 : (*g4it).second;
   TGeoVolume* vol = node->GetVolume();
@@ -972,14 +972,11 @@ void* Geant4Converter::handlePlacement(const std::string& name, const TGeoNode* 
              node, node->GetName(), node->IsA()->GetName(), vol);
     }
     else {
-      int           copy               = node->GetNumber();
-      bool          node_is_reflected  = is_left_handed(tr);
-      bool          node_is_assembly   = vol->IsA() == TGeoVolumeAssembly::Class();
-      bool          mother_is_assembly = mot_vol ? mot_vol->IsA() == TGeoVolumeAssembly::Class() : false;
-      G4Transform3D transform;
-      Geant4GeometryMaps::VolumeMap::const_iterator volIt = info.g4Volumes.find(mot_vol);
+      int  copy               = node->GetNumber();
+      bool node_is_reflected  = is_left_handed(tr);
+      bool node_is_assembly   = vol->IsA() == TGeoVolumeAssembly::Class();
+      bool mother_is_assembly = mot_vol ? mot_vol->IsA() == TGeoVolumeAssembly::Class() : false;
 
-      g4Transform(tr, transform);
       if ( mother_is_assembly )   {
         //
         // Mother is an assembly:
@@ -987,16 +984,54 @@ void* Geant4Converter::handlePlacement(const std::string& name, const TGeoNode* 
         // -- placed volumes were already added before in "handleAssembly"
         // -- imprint cannot be made, because this requires a logical volume as a mother
         //
-        printout(lvl, "Geant4Converter", "+++ Assembly: **** : dau:%s "
-                 "to mother %s Tr:x=%8.3f y=%8.3f z=%8.3f",
-                 vol->GetName(), mot_vol->GetName(),
-                 transform.dx(), transform.dy(), transform.dz());
+        printout(lvl, "Geant4Converter", "+++ Assembly: **** : daughter %s to mother %s",
+                 vol->GetName(), mot_vol ? mot_vol->GetName() : "????");
         return nullptr;
       }
+
+      G4LogicalVolume* g4mot = nullptr;
+      auto             volIt = info.g4Volumes.find(mot_vol);
+      if ( volIt != info.g4Volumes.end() )  {
+        // Rational: Conversion/scanning was steered from top->down.
+        //
+        // Hence all mothers have proper relationship also to re-aligned daughters.
+        // However, only the re-aligned daughters have the proper mother-relationship.
+        // --> If a mother was found, the converted mother is the real one.
+        g4mot = (*volIt).second;
+      }
+      else if ( node != info.manager->GetTopNode() )  {
+        /// The mother of daughter was not converted.
+        /// This may be a non-re-aligned daughter, where the daughter->mother relationship
+        /// was not properly updated on re-alignment.
+        ///
+        TGeoNode *n1;
+        TGeoIterator iter(info.manager->GetTopVolume());
+        iter.SetType(1);
+        printout(ALWAYS, "Geant4Converter", "+++ (SHOULD NOT ENTER HERE) Assembly: no G4 mother: %s org mot: %p",
+                 node->GetName(), mot_vol);
+        while ( (n1=iter.Next()) )  {
+          if ( n1 == node )  {
+            TGeoNode*   nmot = iter.GetNode(iter.GetLevel()-1);
+            TGeoVolume* mmot = nmot->GetVolume();
+            volIt = info.g4Volumes.find(mmot);
+            if ( volIt != info.g4Volumes.end() )  {
+              TString path;
+              iter.GetPath(path);
+              g4mot = (*volIt).second;
+              printout(ALWAYS, "Geant4Converter", "+++ Assembly: Realigned mother: %s org mot: %p aligned: %p",
+                       path.Data(), mot_vol, mmot);
+              break;
+            }
+          }
+        }
+      }
+
       G4Scale3D        scale;
-      G4Rotate3D       rot;
+      G4Rotate3D       rotate;
       G4Translate3D    trans;
-      transform.getDecomposition(scale, rot, trans);
+      G4Transform3D    transform;
+      g4Transform(tr, transform);
+      transform.getDecomposition(scale, rotate, trans);
       if ( node_is_assembly )   {
         //
         // Node is an assembly:
@@ -1008,19 +1043,24 @@ void* Geant4Converter::handlePlacement(const std::string& name, const TGeoNode* 
                  mot_vol ? mot_vol->GetName() : "<unknown>",
                  transform.dx(), transform.dy(), transform.dz(),
                  scale.xx(), scale.yy(), scale.zz());
-        Geant4AssemblyVolume* ass = (Geant4AssemblyVolume*)info.g4AssemblyVolumes[node];
+        Geant4AssemblyVolume* ass = info.g4AssemblyVolumes[node];
         Geant4AssemblyVolume::Chain chain;
         chain.emplace_back(node);
-        ass->imprint(*this, node, chain, ass, (*volIt).second, transform, checkOverlaps);
+        if ( !ass )  {
+          except("Geant4Converter",
+                 "+++ Assembly: %s mother: %s Geant4AssemblyVolume not present!",
+                 node->GetName(), mot_vol ? mot_vol->GetName() : "<unknown>");
+        }
+        ass->imprint(*this, node, chain, ass, g4mot, transform, checkOverlaps);
         return nullptr;
       }
-      else if ( node != info.manager->GetTopNode() && volIt == info.g4Volumes.end() )  {
+      else if ( node != info.manager->GetTopNode() && nullptr == g4mot )  {
         //throw std::logic_error("Geant4Converter: Invalid mother volume found!");
       }
       PlacedVolume pv(node);
       const auto*  pv_data = pv.data();
       G4LogicalVolume* g4vol = info.g4Volumes[vol];
-      G4LogicalVolume* g4mot = info.g4Volumes[mot_vol];
+      //G4LogicalVolume* g4mot = info.g4Volumes[mot_vol];
       G4PhysicalVolumesPair pvPlaced  { nullptr, nullptr };
 
       if ( pv_data && pv_data->params && (pv_data->params->flags&Volume::REPLICATED) )   {
@@ -1304,7 +1344,7 @@ void* Geant4Converter::handleMaterialProperties(TObject* mtx) const    {
 
   if ( nullptr != cptr )   {  // Check if the property should not be passed to Geant4
     printout(INFO,"Geant4MaterialProperties","++ Ignore property %s [%s].",
-             matrix->GetName(), matrix->GetTitle());	     
+             matrix->GetName(), matrix->GetTitle());             
     return nullptr;
   }
   cptr = ::strstr(matrix->GetTitle(), GEANT4_TAG_IGNORE);

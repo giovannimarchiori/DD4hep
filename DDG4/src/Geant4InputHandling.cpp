@@ -446,7 +446,14 @@ getRelevant(std::set<int>& visited,
       G4PrimaryParticle* p4 = (ip4 == prim.end()) ? 0 : (*ip4).second;
       if ( !p4 )  {
         p4 = createG4Primary(p);
-        p4->SetProperTime(proper_time);
+        // if the user wants the particle with this PDG id to be decayed according to the lifetime distrution configured
+        // in particle.tbl (or the geant4 defaults) then they have to configure this. This is needed since 0.0 is now a
+        // allowed pre-defined decay time by geant4
+        if(primaryConfig.m_decayByGeant.count(abs(p->pdgID))) {
+          p4->SetProperTime(-1);
+        } else {
+          p4->SetProperTime(proper_time);
+        }
         prim[p->id] = p4;
         Primaries daughters;
         for(Geant4Particle::Particles::const_iterator i=dau.begin(); i!=dau.end(); ++i)  {
@@ -519,7 +526,7 @@ int dd4hep::sim::generatePrimaries(const Geant4Action* caller,
               G4PrimaryParticle* p4 = (*j).second;
               PropertyMask reason(r->reason);
               char text[64];
-	      
+              
               reason.set(G4PARTICLE_PRIMARY);
               v4->SetPrimary(p4);
               ::snprintf(text,sizeof(text),"-> G4Primary[%3d]",num_part);

@@ -75,9 +75,9 @@ namespace dd4hep {
       interp() = default;
       virtual ~interp() = default;
       static void run(const std::string& name)  {
-	std::pair<int, char**> a(0,0);
-	TRint app(name.c_str(), &a.first, a.second);
-	app.Run();
+        std::pair<int, char**> a(0,0);
+        TRint app(name.c_str(), &a.first, a.second);
+        app.Run();
       }
     };
     //// Helper to access the evaluator instances
@@ -86,10 +86,10 @@ namespace dd4hep {
       eval() = default;
       virtual ~eval() = default;
       static dd4hep::tools::Evaluator& instance()     {
-	return dd4hep::evaluator();
+        return dd4hep::evaluator();
       }
       static dd4hep::tools::Evaluator& g4instance()   {
-	return dd4hep::g4Evaluator();
+        return dd4hep::g4Evaluator();
       }
     };
   }
@@ -829,6 +829,21 @@ template class dd4hep::Handle<TNamed>;
 #pragma link C++ class dd4hep::cond::ClientData+;
 #pragma link C++ class dd4hep::cond::AbstractMap+;
 #pragma link C++ class dd4hep::cond::AbstractMap::Params+;
+
+
+#pragma link C++ typedef dd4hep::Position;
+#pragma link C++ typedef dd4hep::PositionRhoZPhi;
+#pragma link C++ typedef dd4hep::PositionPolar;
+#pragma link C++ typedef dd4hep::Direction;
+#pragma link C++ typedef dd4hep::XYZAngles;
+#pragma link C++ typedef dd4hep::RotationZYX;
+#pragma link C++ typedef dd4hep::RotationX;
+#pragma link C++ typedef dd4hep::RotationY;
+#pragma link C++ typedef dd4hep::RotationZ;
+#pragma link C++ typedef dd4hep::Rotation3D;
+#pragma link C++ typedef dd4hep::EulerAngles;
+#pragma link C++ typedef dd4hep::Transform3D;
+#pragma link C++ typedef dd4hep::Translation3D;
 
 #endif  // __CINT__
 #endif // DDCORE_SRC_ROOTDICTIONARY_H

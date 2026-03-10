@@ -45,10 +45,20 @@ dd4hep_add_dictionary( G__DDG4
   SOURCES python/DDG4Dict.C
   USES    DD4hep::DDCore DD4hep::DDParsers DD4hep::DDG4 Geant4::Interface
   )
+#-----------------------------------------------------------------------------------
+# Note:
+# This is only an example how to add customizable G4 physics constructors.
+# You only need a compiled dictionary. Other specializations unless required
+# by multiple people should be kept in user space.
+#
+dd4hep_add_dictionary( G__DDG4Physics
+  SOURCES python/DDG4PhysicsDict.C
+  USES    DD4hep::DDCore DD4hep::DDParsers DD4hep::DDG4 Geant4::Interface
+  )
 #---------------------------  Plugin library for the simulation framework  ---------
 dd4hep_add_plugin(DDG4Plugins
   SOURCES   plugins/*.cpp
-  GENERATED G__DDG4.cxx
+  GENERATED G__DDG4.cxx G__DDG4Physics.cxx
   USES      DD4hep::DDG4 DD4hep::DDParsers ${XML_LIBRARIES} ROOT::Core ${CLHEP} 
   )
 #---------------------------  Plugin library for the simulation framework  ---------
@@ -68,10 +78,8 @@ if(TARGET Python::Python AND TARGET ROOT::ROOTTPython)
   add_library(DDPython G__DDPython.cxx tpython/DDPython.cpp)
   add_library(DD4hep::DDPython ALIAS DDPython)
   target_link_libraries(DDPython DD4hep::DDG4 ROOT::Core Python::Python ROOT::ROOTTPython)
-  IF(${CMAKE_CXX_STANDARD} GREATER 16)
-    # python header not cxx17 compatible, gives error in clang
-    target_compile_options(DDPython PUBLIC -Wno-register)
-  ENDIF()
+  # python header not cxx17 compatible, gives error in clang
+  target_compile_options(DDPython PUBLIC -Wno-register)
   dd4hep_add_plugin(DDG4Python
     SOURCES   src/python/*.cpp
     GENERATED G__DDG4Python.cxx
@@ -102,9 +110,14 @@ IF(TARGET LCIO::lcio)
 ENDIF()
 
 IF(TARGET EDM4HEP::edm4hep)
+  if(podio_VERSION VERSION_GREATER_EQUAL "1.0.0")
+    set(DDG4_PODIO_IO_TARGET podio::podioIO)
+  else()
+    set(DDG4_PODIO_IO_TARGET podio::podioRootIO)
+  endif()
   dd4hep_add_plugin(DDG4EDM4HEP
     SOURCES edm4hep/Geant4Output2EDM4hep.cpp
-    USES    DD4hep::DDG4 EDM4HEP::edm4hep EDM4HEP::edm4hepDict podio::podio podio::podioDict podio::podioRootIO
+    USES    DD4hep::DDG4 EDM4HEP::edm4hep EDM4HEP::edm4hepDict podio::podio podio::podioDict ${DDG4_PODIO_IO_TARGET}
     )
   set_target_properties(DDG4EDM4HEP PROPERTIES VERSION ${DD4hep_VERSION} SOVERSION ${DD4hep_SOVERSION})
   if(TARGET podio::podioIO)
@@ -179,8 +192,8 @@ get_filename_component(PYTHON_INTERPRETER_BINARY ${Python_EXECUTABLE} NAME)
 configure_file(python/DDSim/bin/ddsim.in.py ${CMAKE_BINARY_DIR}/bin/ddsim @ONLY)
 install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/ddsim DESTINATION bin)
 
-install(PROGRAMS python/bin/g4MaterialScan.py DESTINATION bin RENAME g4MaterialScan)
-install(PROGRAMS python/bin/g4GeometryScan.py DESTINATION bin RENAME g4GeometryScan)
+install(PROGRAMS python/bin/g4MaterialScan.py  DESTINATION bin RENAME g4MaterialScan)
+install(PROGRAMS python/bin/g4GeometryScan.py  DESTINATION bin RENAME g4GeometryScan)
 install(PROGRAMS python/bin/g4GraphicalScan.py DESTINATION bin RENAME g4GraphicalScan)
 
 # configure and install DD4hepSimulation files

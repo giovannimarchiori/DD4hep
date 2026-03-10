@@ -16,6 +16,7 @@ from dd4hep_base import *  # noqa: F403
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
 def loadDDG4():
   import ROOT
   from ROOT import gSystem
@@ -46,11 +47,13 @@ def loadDDG4():
 current = __import__(__name__)
 
 
+# ---------------------------------------------------------------------------
 def _import_class(ns, nam):
   scope = getattr(current, ns)
   setattr(current, nam, getattr(scope, nam))
 
 
+# ---------------------------------------------------------------------------
 try:
   dd4hep = loadDDG4()
 except Exception as X:
@@ -60,6 +63,7 @@ except Exception as X:
   logger.error('+--%-100s--+', 100 * '-')
   exit(1)
 
+# ---------------------------------------------------------------------------
 from ROOT import CLHEP as CLHEP  # noqa
 Core = dd4hep
 Sim = dd4hep.sim
@@ -69,6 +73,7 @@ Interface = Sim.Geant4ActionCreation
 Detector = Core.Detector
 
 
+# ---------------------------------------------------------------------------
 def _constant(self, name):
   return self.constantAsString(name)
 
@@ -76,6 +81,7 @@ def _constant(self, name):
 Detector.globalVal = _constant
 
 
+# ---------------------------------------------------------------------------
 def importConstants(description, namespace=None, debug=False):
   """
   Import the Detector constants into the DDG4 namespace
@@ -123,14 +129,17 @@ def importConstants(description, namespace=None, debug=False):
     logger.info('+++ Imported %d global values to namespace:%s', num, ns.__name__,)
 
 
+# ---------------------------------------------------------------------------
 def _registerGlobalAction(self, action):
   self.get().registerGlobalAction(Interface.toAction(action))
 
 
+# ---------------------------------------------------------------------------
 def _registerGlobalFilter(self, filter):  # noqa: A002
   self.get().registerGlobalFilter(Interface.toAction(filter))
 
 
+# ---------------------------------------------------------------------------
 def _evalProperty(data):
   """
     Function necessary to extract real strings from the property value.
@@ -151,6 +160,7 @@ def _evalProperty(data):
   return data
 
 
+# ---------------------------------------------------------------------------
 def _getKernelProperty(self, name):
   ret = Interface.getPropertyKernel(self.get(), name)
   if ret.status > 0:
@@ -163,6 +173,7 @@ def _getKernelProperty(self, name):
   raise KeyError(msg)
 
 
+# ---------------------------------------------------------------------------
 def _setKernelProperty(self, name, value):
   if Interface.setPropertyKernel(self.get(), str(name), str(value)):
     return
@@ -170,14 +181,17 @@ def _setKernelProperty(self, name, value):
   raise KeyError(msg)
 
 
+# ---------------------------------------------------------------------------
 def _kernel_phase(self, name):
   return self.addSimplePhase(str(name), False)
 
 
+# ---------------------------------------------------------------------------
 def _kernel_worker(self):
   return Kernel(self.get().createWorker())
 
 
+# ---------------------------------------------------------------------------
 def _kernel_terminate(self):
   return self.get().terminate()
 
@@ -193,62 +207,77 @@ Kernel.terminate = _kernel_terminate
 ActionHandle = Sim.ActionHandle
 
 
+# ---------------------------------------------------------------------------
 def SensitiveAction(kernel, nam, det, shared=False):
   return Interface.createSensitive(kernel, str(nam), str(det), shared)
 
 
+# ---------------------------------------------------------------------------
 def Action(kernel, nam, shared=False):
   return Interface.createAction(kernel, str(nam), shared)
 
 
+# ---------------------------------------------------------------------------
 def Filter(kernel, nam, shared=False):
   return Interface.createFilter(kernel, str(nam), shared)
 
 
+# ---------------------------------------------------------------------------
 def PhaseAction(kernel, nam, shared=False):
   return Interface.createPhaseAction(kernel, str(nam), shared)
 
 
+# ---------------------------------------------------------------------------
 def RunAction(kernel, nam, shared=False):
   return Interface.createRunAction(kernel, str(nam), shared)
 
 
+# ---------------------------------------------------------------------------
 def EventAction(kernel, nam, shared=False):
   return Interface.createEventAction(kernel, str(nam), shared)
 
 
+# ---------------------------------------------------------------------------
 def GeneratorAction(kernel, nam, shared=False):
   return Interface.createGeneratorAction(kernel, str(nam), shared)
 
 
+# ---------------------------------------------------------------------------
 def TrackingAction(kernel, nam, shared=False):
   return Interface.createTrackingAction(kernel, str(nam), shared)
 
 
+# ---------------------------------------------------------------------------
 def SteppingAction(kernel, nam, shared=False):
   return Interface.createSteppingAction(kernel, str(nam), shared)
 
 
+# ---------------------------------------------------------------------------
 def StackingAction(kernel, nam, shared=False):
   return Interface.createStackingAction(kernel, str(nam), shared)
 
 
+# ---------------------------------------------------------------------------
 def DetectorConstruction(kernel, nam):
   return Interface.createDetectorConstruction(kernel, str(nam))
 
 
+# ---------------------------------------------------------------------------
 def PhysicsList(kernel, nam):
   return Interface.createPhysicsList(kernel, str(nam))
 
 
+# ---------------------------------------------------------------------------
 def UserInitialization(kernel, nam):
   return Interface.createUserInitialization(kernel, str(nam))
 
 
+# ---------------------------------------------------------------------------
 def SensitiveSequence(kernel, nam):
   return Interface.createSensDetSequence(kernel, str(nam))
 
 
+# ---------------------------------------------------------------------------
 def _setup(obj):
   def _adopt(self, action):
     self.__adopt(action.get())
@@ -259,6 +288,7 @@ def _setup(obj):
   o.add = _adopt
 
 
+# ---------------------------------------------------------------------------
 def _setup_callback(obj):
   def _adopt(self, action):
     self.__adopt(action.get(), action.callback())
@@ -295,11 +325,16 @@ _import_class('Sim', 'Geant4UserParticleHandler')
 _import_class('Sim', 'Geant4UserInitialization')
 _import_class('Sim', 'Geant4DetectorConstruction')
 _import_class('Sim', 'Geant4GeneratorWrapper')
+_import_class('Sim', 'Geant4VolumeManager')
 _import_class('Sim', 'Geant4Random')
 _import_class('CLHEP', 'HepRandom')
 _import_class('CLHEP', 'HepRandomEngine')
 
+from ROOT import G4VPhysicsConstructor as G4VPhysicsConstructor  # noqa: F401, E402
+from ROOT import G4StepLimiterPhysics as StepLimiterPhysics  # noqa: F401, E402
 
+
+# ---------------------------------------------------------------------------
 def _get(self, name):
   a = Interface.toAction(self)
   ret = Interface.getProperty(a, name)
@@ -313,6 +348,7 @@ def _get(self, name):
   raise KeyError(msg)
 
 
+# ---------------------------------------------------------------------------
 def _set(self, name, value):
   """This function is called when properties are passed to the c++ objects."""
   from dd4hep_base import unicode_2_string
@@ -325,6 +361,7 @@ def _set(self, name, value):
   raise KeyError(msg)
 
 
+# ---------------------------------------------------------------------------
 def _props(obj):
   _import_class('Sim', obj)
   cl = getattr(current, obj)
@@ -360,6 +397,8 @@ _props('SensDetActionSequenceHandle')
 _props('UserInitializationSequenceHandle')
 
 _props('Geant4PhysicsListActionSequence')
+_import_class('Sim', 'Geant4HitData')
+_import_class('Sim', 'Geant4ParticleProperties')
 
 
 # ---------------------------------------------------------------------------
@@ -583,24 +622,41 @@ class Geant4:
     self.kernel().terminate()
     return self
 
-  def printDetectors(self):
+  def printDetectors(self, **kwargs):
     """
     Scan the list of detectors and print detector name and sensitive type
 
     \author  M.Frank
     """
-    logger.info('+++  List of sensitive detectors:')
-    for i in self.description.detectors():
-      o = DetElement(i.second.ptr())  # noqa: F405
-      sd = self.description.sensitiveDetector(str(o.name()))
-      if sd.isValid():
-        typ = sd.type()
-        sdtyp = 'Unknown'
-        if typ in self.sensitive_types:
-          sdtyp = self.sensitive_types[typ]
-        logger.info('+++  %-32s type:%-12s  --> Sensitive type: %s', o.name(), typ, sdtyp)
+    print_path = kwargs.get('print_path')
+    sensitive = kwargs.get('sensitive') or True
+    non_sensitive = kwargs.get('non_sensitive')
+    if sensitive:
+      logger.info('+++  List of sensitive detectors:')
+      for i in self.description.detectors():
+        o = DetElement(i.second.ptr())  # noqa: F405
+        sd = self.description.sensitiveDetector(str(o.name()))
+        if sd.isValid():
+          path = ''
+          typ = sd.type()
+          sdtyp = 'Unknown'
+          if typ in self.sensitive_types:
+            sdtyp = self.sensitive_types[typ]
+          if print_path:
+            path = o.path()
+          logger.info('+++  %-32s type:%-12s  --> Sensitive type: %-30s  %s', o.name(), typ, sdtyp, path)
+    if non_sensitive:
+      logger.info('+++  List of not sensitive detector elements:')
+      for i in self.description.detectors():
+        o = DetElement(i.second.ptr())  # noqa: F405
+        sd = self.description.sensitiveDetector(str(o.name()))
+        if not sd.isValid():
+          path = ''
+          if print_path:
+            path = o.path()
+          logger.info('+++  %-32s type:non-sensitive detector %42s %s', o.name(), '', path)
 
-  def setupDetectors(self):
+  def setupDetectors(self, **kwargs):
     """
     Scan the list of detectors and assign the proper sensitive actions
 
@@ -608,6 +664,7 @@ class Geant4:
     """
     seq = None
     actions = []
+    debug_volid = kwargs.get('debug_volid')
     logger.info('+++  Setting up sensitive detectors:')
     for i in self.description.detectors():
       o = DetElement(i.second.ptr())  # noqa: F405
@@ -617,14 +674,14 @@ class Geant4:
         sdtyp = 'Unknown'
         if typ in self.sensitive_types:
           sdtyp = self.sensitive_types[typ]
-          seq, act = self.setupDetector(o.name(), sdtyp, collections=None)
+          seq, act = self.setupDetector(o.name(), sdtyp, collections=None, debug_volid=debug_volid)
           logger.info('+++  %-32s type:%-12s  --> Sensitive type: %s', o.name(), typ, sdtyp)
           actions.append(act)
           continue
         logger.info('+++  %-32s --> UNKNOWN Sensitive type: %s', o.name(), typ)
     return (seq, actions)
 
-  def setupDetector(self, name, action, collections=None):
+  def setupDetector(self, name, action, collections=None, debug_volid=False):
     """
     Setup single subdetector and assign the proper sensitive action
 
@@ -648,6 +705,8 @@ class Geant4:
       collections = ro.collectionNames()
       if len(collections) == 0:
         act = SensitiveAction(self.kernel(), sensitive_type + '/' + name + 'Handler', name)
+        if debug_volid:
+          act.DebugVolumeID = debug_volid
         for parameter, value in parameterDict.items():
           setattr(act, parameter, value)
         acts.append(act)
@@ -681,7 +740,7 @@ class Geant4:
       return (seq, acts)
     return (seq, acts[0])
 
-  def setupCalorimeter(self, name, type=None, collections=None):  # noqa: A002
+  def setupCalorimeter(self, name, type=None, collections=None, debug_volid=False):  # noqa: A002
     """
     Setup subdetector of type 'calorimeter' and assign the proper sensitive action
 
@@ -692,9 +751,9 @@ class Geant4:
     # sd.setType('calorimeter')
     if typ is None:
       typ = self.sensitive_types['calorimeter']
-    return self.setupDetector(name, typ, collections)
+    return self.setupDetector(name, typ, collections=collections, debug_volid=debug_volid)
 
-  def setupTracker(self, name, type=None, collections=None):  # noqa: A002
+  def setupTracker(self, name, type=None, collections=None, debug_volid=False):  # noqa: A002
     """
     Setup subdetector of type 'tracker' and assign the proper sensitive action
 
@@ -705,14 +764,14 @@ class Geant4:
     # sd.setType('tracker')
     if typ is None:
       typ = self.sensitive_types['tracker']
-    return self.setupDetector(name, typ, collections)
+    return self.setupDetector(name, typ, collections=collections, debug_volid=debug_volid)
 
   def _private_setupField(self, field, stepper, equation, prt):
     import g4units
     field.stepper = stepper
     field.equation = equation
-    field.eps_min = 5e-05 * g4units.mm
-    field.eps_max = 0.001 * g4units.mm
+    field.eps_min = 5e-05
+    field.eps_max = 0.001
     field.min_chord_step = 0.01 * g4units.mm
     field.delta_chord = 0.25 * g4units.mm
     field.delta_intersection = 0.001 * g4units.mm
@@ -721,8 +780,8 @@ class Geant4:
     if prt:
       logger.info('+++++> %s %s %s %s ', field.name, '-> stepper  = ', str(field.stepper), '')
       logger.info('+++++> %s %s %s %s ', field.name, '-> equation = ', str(field.equation), '')
-      logger.info('+++++> %s %s %s %s ', field.name, '-> eps_min  = ', str(field.eps_min), '[mm]')
-      logger.info('+++++> %s %s %s %s ', field.name, '-> eps_max  = ', str(field.eps_max), '[mm]')
+      logger.info('+++++> %s %s %s %s ', field.name, '-> eps_min  = ', str(field.eps_min), '')
+      logger.info('+++++> %s %s %s %s ', field.name, '-> eps_max  = ', str(field.eps_max), '')
       logger.info('+++++> %s %s %s %s ', field.name, '-> delta_chord        = ', str(field.delta_chord), '[mm]')
       logger.info('+++++> %s %s %s %s ', field.name, '-> min_chord_step     = ', str(field.min_chord_step), '[mm]')
       logger.info('+++++> %s %s %s %s ', field.name, '-> delta_one_step     = ', str(field.delta_one_step), '[mm]')
@@ -742,6 +801,7 @@ class Geant4:
     self._private_setupField(field, stepper, equation, prt)
     return field
 
+  # Create the master physics list
   def setupPhysics(self, name):
     phys = self.master().physicsList()
     phys.extends = name
@@ -750,6 +810,7 @@ class Geant4:
     phys.dump()
     return phys
 
+  # Add a sub-physics list to the master physics list
   def addPhysics(self, name):
     phys = self.master().physicsList()
     opt = PhysicsList(self.master(), name)
@@ -866,4 +927,48 @@ class Geant4:
     return self
 
 
+# ---------------------------------------------------------------------------
+# Instantiate convenience python interface to DDG4 C++ classes
 Simple = Geant4
+
+
+# ---------------------------------------------------------------------------
+def import_geant4_class(class_name, header=None):
+  try:
+    from ROOT import gInterpreter
+    if not header:
+      header = class_name + '.hh'
+    ret = gInterpreter.ProcessLine(f'#include <{header}>')
+    if 0 == ret:
+      g4_class = getattr(ROOT, class_name)  # noqa: F405
+      if g4_class:
+        logger.warning(f'+++ Successfully imported Geant4 class {class_name} from header {class_name}.hh')
+        return g4_class
+  except Exception:
+    pass
+  logger.error(f'+++ FAILED to import class Geant4 class {class_name}')
+  return None
+
+
+# ---------------------------------------------------------------------------
+class Geant4_class_loader:
+  all_classes = {}
+
+  def __init__(self):
+    self.gbl = globals()
+
+  def get_class(self, name, header=None):
+    clazz = Geant4_class_loader.all_classes.get(name)
+    if not clazz:
+      clazz = import_geant4_class(class_name=name, header=header)
+      if clazz:
+        Geant4_class_loader.all_classes[name] = clazz
+    return clazz
+
+  def __getattr__(self, name):
+    return self.get_class(name)
+
+
+# ---------------------------------------------------------------------------
+# Instantiate python interface to Geant4 C++ classes
+geant4 = Geant4_class_loader()
