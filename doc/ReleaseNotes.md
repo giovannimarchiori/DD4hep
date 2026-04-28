@@ -1,3 +1,85 @@
+# v01-37
+
+* 2026-04-27 Juan Miguel Carceller ([PR#1621](https://github.com/aidasoft/dd4hep/pull/1621))
+  - ddsim: Allow passing `batch` as runType for G4Gun and G4GPS
+
+* 2026-04-24 Markus Frank ([PR#1620](https://github.com/aidasoft/dd4hep/pull/1620))
+  - Improve the interface to access material properties from materials if used:
+  ```
+      /// Access the number of properties attached to the material (if any)
+      std::size_t numProperties()  const;
+      /// Access to tabular properties of the material by index
+      Property    property(std::size_t index)  const;
+      /// Access to tabular properties of the material by name
+      Property    property(const char* name)  const;
+      /// Access to tabular properties of the material by name
+      Property    property(const std::string& name)  const;
+      /// Access string property value from the material table
+      std::string propertyRef(const std::string& name, const std::string& default_value="");
+      /// Access the number of const properties attached to the material (if any)
+      std::size_t numConstProperties()  const;
+      /// Access to const properties of the material by index
+      double      constProperty(std::size_t index)  const;
+      /// Access to tabular properties of the material
+      double      constProperty(const std::string& name)  const;
+      /// Access string property value from the material table
+      std::string constPropertyRef(const std::string& name, const std::string& default_value="");
+  ```
+  See for examples the area: examples/ClientTests/src/MaterialTester_geo.cpp
+  
+  - In Geant4 special tags are used if the properties should be treated in a special way by Geant4:
+    (see examples/OpticalSurfaces/compact/ReadMaterialProperties.xml)
+    -- the tag `Geant4-ignore` hides the material property entirely from the Geant4 materials
+    -- the tag `Geant4-custom` injects the property into the  Geant4 material. It may be used in user code 
+       and accessed from regular Geant4 materials.
+    -- the tag `Geant4-plugin` hides the property from Geant4 and allows the usage inside Geant4 plugins.
+  
+  Users are e.g. RICH reconstruction and Channeling experiments. [Request from W,Pokorski]
+
+* 2026-04-22 Juan Miguel Carceller ([PR#1615](https://github.com/aidasoft/dd4hep/pull/1615))
+  - Remove checks for nullptrs before deleting, since deleting nullptr is a no-op
+
+* 2026-04-20 Markus Frank ([PR#1618](https://github.com/aidasoft/dd4hep/pull/1618))
+  - Protect the usage of NON-Geant4 properties against usage (and exceptions) when converting geometries to Geant4.
+  
+  Since Geant4 version 11 the check of for an accepted material property throws a fatal exception, which forces Geant4 to call exit. This MR fixes this behavior by checking the possibility upfront by checking the property names rather than a returned negative index.
+  Issue reported by W.Pokorski.
+
+* 2026-04-15 sss ([PR#1608](https://github.com/aidasoft/dd4hep/pull/1608))
+  - SDActions: Fix possible issues in looking up volumes by IDs in the case where VolumeIDs may be duplicated across subdetectors.
+
+* 2026-04-14 sss ([PR#1611](https://github.com/aidasoft/dd4hep/pull/1611))
+  - Change DetectorSelector to take a const Detector reference.
+
+* 2026-04-14 sss ([PR#1610](https://github.com/aidasoft/dd4hep/pull/1610))
+  - Tweak script permissions so that they work when installed as symlinks (CMAKE_INSTALL_MODE=ABS_SYMLINK).
+
+* 2026-04-14 Wouter Deconinck ([PR#1602](https://github.com/aidasoft/dd4hep/pull/1602))
+  - add Halton sequences support to isotrope generator
+
+* 2026-04-13 sss ([PR#1609](https://github.com/aidasoft/dd4hep/pull/1609))
+  - Fix typo in error message.
+
+* 2026-04-13 Juan Miguel Carceller ([PR#1607](https://github.com/aidasoft/dd4hep/pull/1607))
+  - CI: Update the checkout action since v4 uses a deprecated version of Node.js
+
+* 2026-04-13 Juan Miguel Carceller ([PR#1605](https://github.com/aidasoft/dd4hep/pull/1605))
+  - BitFieldCoder: Fix undefined behaviour if width is 32 (or greater) and the bitfield is unsigned. Then `1 << width` is undefined behaviour.
+
+* 2026-03-31 Arthur Hennequin ([PR#1603](https://github.com/aidasoft/dd4hep/pull/1603))
+  * Shapes.h: Remove unused template function calling non existing function. (fix nvcc build)
+
+* 2026-03-26 Markus Frank ([PR#1600](https://github.com/aidasoft/dd4hep/pull/1600))
+  - Remove LCDD Geometry conversion. The LCDD was never used in D4hep, since DD4hep was not adopted by Slic.
+    In any case, the GDML conversion either from Geant4 of from TGeo offers very similar functionality.
+    See also issue  https://github.com/AIDASoft/DD4hep/issues/1597
+  - Keep the extraction of visualization attributes.
+  - Remove all examples testing the conversion to LCDD.
+
+* 2026-03-23 Thomas Madlener ([PR#1582](https://github.com/aidasoft/dd4hep/pull/1582))
+  - Set the fast simulation flag for MCParticles (in EDM4hep version 1.0.1) for which at least one contribution to a calorimeter hit has been created by fast simulation.
+  - Set the step length for contributions that are created by fast simulation to `-1` to clearly distinguish them from those created by ordinary simulation as those by definition have a step length that is `>= 0`. **This will only be effective if the detailed shower mode is enabled.**
+
 # v01-36
 
 * 2026-03-20 Juan Miguel Carceller ([PR#1599](https://github.com/aidasoft/dd4hep/pull/1599))
