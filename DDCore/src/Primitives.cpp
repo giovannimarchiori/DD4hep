@@ -17,6 +17,7 @@
 #include <DD4hep/Printout.h>
 
 // C/C++ include files
+#include <cstddef>
 #include <cstring>
 
 #if defined(__linux) || defined(__APPLE__) || defined(__powerpc64__)
@@ -208,9 +209,7 @@ unsigned long long int dd4hep::detail::update_hash64(unsigned long long int hash
 /// 64 bit hash update function
 unsigned long long int dd4hep::detail::update_hash64(unsigned long long int hash, const void* key, std::size_t len)  {
   const unsigned char* str = (const unsigned char*)key;
-  if ( len > 0 )  {
-    for ( ; --len; ++str) hash = FNV1a_64::doByte(hash, *str);
-  }
+  for (std::size_t i = 0; i < len; ++i) hash = FNV1a_64::doByte(hash, str[i]);
   return hash;
 }
 
