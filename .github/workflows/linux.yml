@@ -24,18 +24,18 @@ jobs:
               "dev4/x86_64-el9-gcc13-opt",
               "dev4/x86_64-ubuntu2404-gcc13-opt",
               "dev3/x86_64-el9-gcc13-opt",
-              "dev3/x86_64-el9-clang19-opt",
+              "dev3/x86_64-el9-clang22-opt",
               "dev3/x86_64-el9-gcc15-dbg"]
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
     - uses: cvmfs-contrib/github-action-cvmfs@10197e000cc0add8e54ac4fb73d3ed44e2de72b4
     - uses: aidasoft/run-lcg-view@d8db17c61216548c9192889942d46ff2d7c3a3b6
       with:
         release-platform: ${{ matrix.LCG }}
         ccache-key: ccache-${{ matrix.LCG }}
         run: |
-          if [[ ${{ matrix.LCG }} =~ clang19 ]]; then
-            source /cvmfs/sft.cern.ch/lcg/contrib/clang/19/x86_64-el9/setup-wrapper.sh
+          if [[ ${{ matrix.LCG }} =~ clang22 ]]; then
+            source /cvmfs/sft.cern.ch/lcg/contrib/clang/22/x86_64-el9/setup-wrapper.sh
           fi
           mkdir build
           cd build
@@ -43,19 +43,26 @@ jobs:
           echo "::group::CMakeConfig"
           # Common CMake options
           source ../.github/scripts/common_cmake_opts.sh
-          if [[ ${{ matrix.LCG }} =~ gcc13|clang19 ]]; then
-            echo "::group::CMakeConfig C++20"
-            cmake \
-              $COMMON_CMAKE_OPTS \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_CXX_STANDARD=20 \
-              ..
-          elif [[ ${{ matrix.LCG }} =~ gcc15 ]]; then
+          if [[ ${{ matrix.LCG }} =~ gcc15 ]]; then
             echo "::group::CMakeConfig C++23"
             cmake \
               $COMMON_CMAKE_OPTS \
               -DCMAKE_BUILD_TYPE=Debug \
               -DCMAKE_CXX_STANDARD=23 \
+              ..
+          elif [[ ${{ matrix.LCG }} =~ clang22 ]]; then
+            echo "::group::CMakeConfig C++23"
+            cmake \
+              $COMMON_CMAKE_OPTS \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_CXX_STANDARD=20 \
+              ..
+          elif [[ ${{ matrix.LCG }} =~ gcc13 ]]; then
+            echo "::group::CMakeConfig C++20"
+            cmake \
+              $COMMON_CMAKE_OPTS \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_CXX_STANDARD=20 \
               ..
           else
             echo "::group::CMakeConfig C++17"
@@ -65,9 +72,12 @@ jobs:
               -DCMAKE_CXX_STANDARD=17 \
               ..
           fi
-          if [[ ${{ matrix.LCG }} =~ dev3 ]]; then
+          if [[ ${{ matrix.LCG }} =~ dev[34] ]]; then
             echo "::group::CMakeConfig 2"
-            cmake -DDD4HEP_HEPMC3_COMPRESSION_SUPPORT=ON ..
+            cmake \
+              -DDD4HEP_HEPMC3_COMPRESSION_SUPPORT=ON \
+              -DDD4HEP_USE_G4HEPEM=ON \
+              ..
           fi
           # Make sure DD4hep can be built with an older version of EDM4hep, 0.10.5 for LCG_106
           if [[ ${{ matrix.LCG }} =~ 106 ]]; then
@@ -85,7 +95,12 @@ jobs:
           mkdir build
           cd build
           source ../../.github/scripts/common_cmake_opts.sh
-          if [[ ${{ matrix.LCG }} =~ gcc13|gcc15|clang19 ]]; then
+          if [[ ${{ matrix.LCG }} =~ gcc15|clang22 ]]; then
+            cmake \
+              $COMMON_EXAMPLES_CMAKE_OPTS \
+              -DCMAKE_CXX_STANDARD=23 \
+              ..
+          elif [[ ${{ matrix.LCG }} =~ gcc13 ]]; then
             cmake \
               $COMMON_EXAMPLES_CMAKE_OPTS \
               -DCMAKE_CXX_STANDARD=20 \
@@ -124,7 +139,7 @@ jobs:
       matrix:
         view-path: ["/cvmfs/sw-nightlies.hsf.org/key4hep/"]
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
     - uses: cvmfs-contrib/github-action-cvmfs@10197e000cc0add8e54ac4fb73d3ed44e2de72b4
     - uses: aidasoft/run-lcg-view@d8db17c61216548c9192889942d46ff2d7c3a3b6
       with:
@@ -188,7 +203,7 @@ jobs:
       matrix:
         LCG: ["LCG_107a/x86_64-el9-gcc13-opt"]
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
     - uses: cvmfs-contrib/github-action-cvmfs@10197e000cc0add8e54ac4fb73d3ed44e2de72b4
     - uses: aidasoft/run-lcg-view@d8db17c61216548c9192889942d46ff2d7c3a3b6
       with:
@@ -217,7 +232,7 @@ jobs:
       matrix:
         LCG: ["dev3/x86_64-el9-gcc13-opt"]
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
     - uses: cvmfs-contrib/github-action-cvmfs@10197e000cc0add8e54ac4fb73d3ed44e2de72b4
     - uses: aidasoft/run-lcg-view@d8db17c61216548c9192889942d46ff2d7c3a3b6
       with:
