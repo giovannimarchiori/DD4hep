@@ -60,10 +60,13 @@ class Geometry(ConfigHelper):
       return
     raise RuntimeError(f"Unsupported type for regexSensitiveDetector: {val!r}")
 
-  def constructGeometry(self, kernel, geant4, geoPrintLevel=2, numberOfThreads=1):
-    """Construct Geant4 geometry."""
-    from DDG4 import DetectorConstruction
+  def constructGeometry(self, kernel, geant4, geoPrintLevel=2):
+    """Construct Geant4 geometry.
 
+    Adds Geant4DetectorGeometryConstruction with all debug/print flags.
+    The caller is responsible for inserting regex-based sensitive detector
+    constructions and Geant4DetectorSensitivesConstruction.
+    """
     seq, act = geant4.addDetectorConstruction('Geant4DetectorGeometryConstruction/ConstructGeo')
     act.DebugMaterials = self.enableDebugMaterials
     act.DebugElements = self.enableDebugElements
@@ -78,15 +81,3 @@ class Geometry(ConfigHelper):
     act.GeoInfoPrintLevel = geoPrintLevel
     act.DumpHierarchy = self.dumpHierarchy
     act.DumpGDML = self.dumpGDML
-
-    # Apply sensitive detectors
-    sensitives = DetectorConstruction(kernel, str('Geant4DetectorSensitivesConstruction/ConstructSD'))
-    sensitives.enableUI()
-    seq.adopt(sensitives)
-
-    for index, (detName, regexDetectors) in enumerate(sorted(self._regexSDDict.items())):
-      seq, act = geant4.addDetectorConstruction(f'Geant4RegexSensitivesConstruction/ConstrSDRegEx_{index}_{detName}')
-      act.Detector = detName
-      # this will set Match, and other properties if possible
-      for key, value in regexDetectors.items():
-        setattr(act, key, value)
