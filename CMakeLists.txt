@@ -64,6 +64,11 @@ IF(${CMAKE_CXX_STANDARD} LESS 17)
   MESSAGE(FATAL_ERROR "DD4hep requires at least CXX Standard 17 to compile")
 ENDIF()
 
+# std::filesystem is part of libstdc++ without linking stdc++fs since GCC 9.1
+IF(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1)
+  MESSAGE(FATAL_ERROR "DD4hep requires GCC 9.1 or later (found ${CMAKE_CXX_COMPILER_VERSION})")
+ENDIF()
+
 ###############################
 # Define DD4hep build options #
 ###############################
@@ -148,11 +153,7 @@ if(TARGET ROOT::ROOTEve)
   find_package (ROOT REQUIRED COMPONENTS ROOTEve CONFIG)
 endif()
 
-# Set when the minimum required CMake version is at least 3.30
-if(POLICY CMP0167)
-  cmake_policy(SET CMP0167 NEW)
-endif()
-find_package(Boost 1.49 REQUIRED)
+find_package(Boost 1.70 REQUIRED CONFIG)
 DD4HEP_SETUP_BOOST_TARGETS()
 
 # Configure Geant4
@@ -306,7 +307,7 @@ install(PROGRAMS ${CMAKE_BINARY_DIR}/bin/run_test.sh         DESTINATION bin )
 
 install(DIRECTORY cmake
   DESTINATION ${CMAKE_INSTALL_PREFIX}
-  FILES_MATCHING PATTERN "*.cmake" PATTERN "thisdd4hep_package.sh.in" PATTERN "run*.sh" PATTERN "*.cpp"
+  FILES_MATCHING PATTERN "*.cmake" PATTERN "thisdd4hep_package.sh.in" PATTERN "run*.sh"
   PATTERN ".svn" EXCLUDE
   )
 
